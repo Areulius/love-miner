@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://r76lx2d3fscg"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eeif1"]
+albedo_color = Color(0.84035367, 0.46984243, 0.3780675, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_eeif1"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7j3w3"]
+render_priority = 1
+albedo_color = Color(0.8595803, 0.50926393, 0.59861773, 1)
+metallic = 1.0
+metallic_specular = 0.53
+roughness = 0.0
+
+[node name="Node3D" type="Node3D" unique_id=1908772743]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1990015725]
+transform = Transform3D(0.17390178, 0, 0, 0, 0.7604581, 0, 0, 0, 0.1481309, 0, 0, 0)
+layers = 524288
+material_override = SubResource("StandardMaterial3D_eeif1")
+cast_shadow = 0
+mesh = SubResource("CapsuleMesh_eeif1")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=298506261]
+transform = Transform3D(0.08161699, 0, 0, 0, -1.649265e-08, -0.0780606, 0, 0.37730786, -3.412137e-09, 0.0020051897, 0.6829408, 0)
+layers = 524288
+material_override = SubResource("StandardMaterial3D_7j3w3")
+cast_shadow = 0
+mesh = SubResource("CapsuleMesh_eeif1")

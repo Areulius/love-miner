@@ -1,0 +1,67 @@
+[gd_scene format=3 uid="uid://m0dtfg5mc3lv"]
+
+[ext_resource type="PackedScene" uid="uid://dxgbp33tt5ne8" path="res://scenes/Player.tscn" id="3_h3gu4"]
+[ext_resource type="PackedScene" uid="uid://ql4ddrd3vqeh" path="res://scenes/Rock.tscn" id="4_dv1a7"]
+[ext_resource type="PackedScene" uid="uid://cwr68dltspxib" path="res://scenes/Teleporter.tscn" id="5_4f67n"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_glv2v"]
+sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_uu6xs"]
+sky_material = SubResource("ProceduralSkyMaterial_glv2v")
+
+[sub_resource type="Environment" id="Environment_r0du0"]
+background_mode = 2
+sky = SubResource("Sky_uu6xs")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_uu6xs"]
+noise_type = 0
+frequency = 0.1554
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_4f67n"]
+width = 1024
+height = 1024
+noise = SubResource("FastNoiseLite_uu6xs")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3dxm6"]
+albedo_color = Color(0.7176471, 0.59607846, 0, 1)
+albedo_texture = SubResource("NoiseTexture2D_4f67n")
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_lgr22"]
+size = Vector2(50, 50)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_uu6xs"]
+points = PackedVector3Array(-25, 0, -25, -25, 0, 25, 25, 0, -25, 25, 0, 25)
+
+[node name="Home" type="Node3D" unique_id=1254569727]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2069250898]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
+light_energy = 0.396
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=376723271]
+environment = SubResource("Environment_r0du0")
+
+[node name="floor" type="StaticBody3D" parent="." unique_id=1488429341]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="floor" unique_id=1506941413]
+material_override = SubResource("StandardMaterial3D_3dxm6")
+mesh = SubResource("PlaneMesh_lgr22")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="floor" unique_id=358371983]
+shape = SubResource("ConvexPolygonShape3D_uu6xs")
+
+[node name="Rock" parent="." unique_id=873625409 instance=ExtResource("4_dv1a7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.55671, 0, -4.7844553)
+
+[node name="Teleporter" parent="." unique_id=286582656 instance=ExtResource("5_4f67n")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.481751, 1.0088465, -5.1770577)
+target_scene = "res://worlds/World1.tscn"
+target_spawn_point = "world1_spawn_point"
+
+[node name="Player" parent="." unique_id=1774481977 instance=ExtResource("3_h3gu4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.050057888, 0, -0.22755957)

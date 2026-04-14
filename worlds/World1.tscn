@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://56rqle1olhfd"]
+
+[ext_resource type="PackedScene" uid="uid://dxgbp33tt5ne8" path="res://scenes/Player.tscn" id="1_w8rnx"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_kayyk"]
+noise_type = 0
+frequency = 0.0012
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_r0du0"]
+width = 1024
+height = 1024
+noise = SubResource("FastNoiseLite_kayyk")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_w8rnx"]
+albedo_color = Color(0.97329503, 0.00078241347, 0.9742604, 1)
+albedo_texture = SubResource("NoiseTexture2D_r0du0")
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_1h1ya"]
+size = Vector2(50, 50)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_ounfx"]
+points = PackedVector3Array(-25, 0, -25, -25, 0, 25, 25, 0, -25, 25, 0, 25)
+
+[node name="World1" type="Node3D" unique_id=1447258178]
+
+[node name="floor" type="StaticBody3D" parent="." unique_id=1052657233]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="floor" unique_id=1846134067]
+material_override = SubResource("StandardMaterial3D_w8rnx")
+mesh = SubResource("PlaneMesh_1h1ya")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="floor" unique_id=808730502]
+shape = SubResource("ConvexPolygonShape3D_ounfx")
+
+[node name="world1_spawn_point" type="Marker3D" parent="." unique_id=1580599326]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2034719, -4.4787474)
+
+[node name="Player" parent="." unique_id=1774481977 instance=ExtResource("1_w8rnx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.260987, 0, -10.972351)

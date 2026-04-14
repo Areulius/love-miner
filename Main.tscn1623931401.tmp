@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://m0dtfg5mc3lv"]
+
+[ext_resource type="Script" uid="uid://bv2vjbj65f8f4" path="res://Player.gd" id="1_glv2v"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_glv2v"]
+sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_uu6xs"]
+sky_material = SubResource("ProceduralSkyMaterial_glv2v")
+
+[sub_resource type="Environment" id="Environment_r0du0"]
+background_mode = 2
+sky = SubResource("Sky_uu6xs")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_0e48y"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_epypp"]
+
+[node name="World" type="Node3D" unique_id=1254569727]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2069250898]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=376723271]
+environment = SubResource("Environment_r0du0")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="." unique_id=2043329766]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+use_collision = true
+size = Vector3(50, 0.2, 50)
+
+[node name="CharacterBody3D" type="CharacterBody3D" parent="." unique_id=847997002]
+script = ExtResource("1_glv2v")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="CharacterBody3D" unique_id=1643943348]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0956535, 0)
+mesh = SubResource("CapsuleMesh_0e48y")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CharacterBody3D" unique_id=1446677405]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0956535, 0)
+shape = SubResource("CapsuleShape3D_epypp")
+
+[node name="Head" type="Node3D" parent="CharacterBody3D" unique_id=1384529572]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5835603, -0.30748284)
+
+[node name="Camera3D" type="Camera3D" parent="CharacterBody3D/Head" unique_id=1847692708]
