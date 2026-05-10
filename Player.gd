@@ -1,95 +1,178 @@
 extends CharacterBody3D
 
-var speed
-const WALK_SPEED = 5.0
-const SPRINT_SPEED = 8.0
-const JUMP_VELOCITY = 4.5
-const SENSITIVITY = 0.002
-const GRAVITY = 12
+@onready var debug_label: Label = $"CanvasLayer/DebugLabel"
 
-var pitch = 0.0
+# Physics
+const GRAVITY: float = 12.0
 
-# View bobbing
-const BOB_FREQ = 2.0
-const BOB_AMP = 0.05
-var t_bob = 0.0
+# Walking
+const WALK_SPEED: float = 5.0
+const JUMP_VELOCITY: float = 4.5
+var speed: float = 0.0
 
-# FOV
-const BASE_FOV = 75
-const FOV_CHANGE = 1.05
+# Sprinting
+const SPRINT_SPEED: float = 8.0
+var is_sprinting: bool = false
 
+# Camera
+const SENSITIVITY: float = 0.0015
+var pitch: float = 0.0
 
 @onready var head = $Head
 @onready var camera = $Head/Camera3D
 
+# Crouching
+const CROUCH_SPEED: float = 3.0
+
+const STAND_HEIGHT: float = 2.0
+const STAND_HEAD_Y: float = 1.6
+const CROUCH_HEIGHT: float = 1.0
+const CROUCH_HEAD_Y: float = 0.8
+
+var is_crouching: bool = false
+
+@onready var collision_shape: CollisionShape3D = $CollisionShape3D
+
+# LERP speeds
+const LERP_SPEED_MOVEMENT_GROUND: float = 10.0
+const LERP_SPEED_MOVEMENT_AIR: float = 4.0
+const LERP_SPEED_CAMERA_FOV: float = 12.0
+const LERP_SPEED_CROUCH: float = 12.0
+
+# View Bob
+const BOB_FREQ: float = 2.0
+const BOB_AMP: float = 0.05
+var t_bob: float = 0.0
+
+# FOV
+const BASE_FOV: float = 75
+const FOV_CHANGE: float = 1.02
+
+# Coyote Time
+const COYOTE_TIME: float = 0.15
+var coyote_timer: float = 0.0
+
+# Jump Buffer
+const JUMP_BUFFER_TIME: float = 0.15
+var jump_buffer_timer: float = 0.0
+
 func _ready():
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-	
-	var spawn_name := GameManager.get_pending_spawn()
-	
-	if spawn_name != "":
-		# Find the marker in this scene and move there
-		var spawn_point := get_tree().get_root().find_child(spawn_name, true, false)
-		if spawn_point:
-			global_position = spawn_point.global_position
+	_setup_spawn_point()
 
 func _unhandled_input(event):
-	# Mouse input
 	if event is InputEventMouseMotion:
+		_rotate_camera(event)
+
+func _physics_process(delta: float) -> void:
+	_apply_gravity(delta)
+	_tick_jump_buffer(delta)
+	_handle_jump()
+	_handle_crouch(delta)
+	_handle_movement(delta)
+	_update_head_bob(delta)
+	_update_fov(delta)
+	move_and_slide()
+
+	_update_debug_hud()
+
+# -- Camera --
+func _rotate_camera(event):
 		rotate_y(-event.relative.x * SENSITIVITY)
 
 		pitch -= event.relative.y * SENSITIVITY
 		pitch = clamp(pitch, -1.5, 1.5)
 		head.rotation.x = pitch
 
-func _physics_process(delta: float) -> void:
-	# Gravity
-	if not is_on_floor():
+# -- Gravity --
+func _apply_gravity(delta: float) -> void:
+	if is_on_floor():
+		coyote_timer = COYOTE_TIME
+	else:
+		coyote_timer -= delta
 		velocity.y -= GRAVITY * delta
 
-	# Jump
-	if Input.is_action_just_pressed("jump") and is_on_floor():
+# -- Jumping & Walking --
+func _handle_jump() -> void:
+	if jump_buffer_timer > 0.0 and coyote_timer > 0.0:
 		velocity.y = JUMP_VELOCITY
+		jump_buffer_timer = 0.0
+		coyote_timer = 0.0
 
-	# Sprint
-	if Input.is_action_pressed("sprint"):
+func _handle_movement(delta: float) -> void:
+	if is_crouching:
+		speed = CROUCH_SPEED
+	elif Input.is_action_pressed("sprint"):
 		speed = SPRINT_SPEED
 	else:
 		speed = WALK_SPEED
 
-	# Get the input direction
 	var input_dir := Input.get_vector("left", "right", "up", "down")
 	var direction := (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-	
-	# Movement
-	if is_on_floor():
-		if direction:
-			velocity.x = direction.x * speed
-			velocity.z = direction.z * speed
-		else:
-			velocity.x = lerp(velocity.x, direction.x * speed, delta * 10)
-			velocity.z = lerp(velocity.z, direction.z * speed, delta * 10)
+	var blend := delta * LERP_SPEED_MOVEMENT_GROUND if is_on_floor() else delta * LERP_SPEED_MOVEMENT_AIR
+
+	velocity.x = lerp(velocity.x, direction.x * speed, blend)
+	velocity.z = lerp(velocity.z, direction.z * speed, blend)
+
+func _tick_jump_buffer(delta: float) -> void:
+	if Input.is_action_just_pressed("jump"):
+		jump_buffer_timer = JUMP_BUFFER_TIME
 	else:
-		velocity.x = lerp(velocity.x, direction.x * speed, delta * 4)
-		velocity.z = lerp(velocity.z, direction.z * speed, delta * 4)
-		
-	# Smooth view bobbing
-	var target_bob = Vector3.ZERO
+		jump_buffer_timer -= delta
+
+# -- Crouching --
+func _handle_crouch(delta: float) -> void:
+	var wants_crouch := Input.is_action_pressed("crouch")
+
+	if wants_crouch and not is_crouching:
+		is_crouching = true
+	elif not wants_crouch and is_crouching:
+		is_crouching = false
+
+	# Smoothly resize collision and move head
+	var target_height := CROUCH_HEIGHT if is_crouching else STAND_HEIGHT
+	var target_head_y := CROUCH_HEAD_Y if is_crouching else STAND_HEAD_Y
+	var target_shape_y := CROUCH_HEIGHT / 2.0 if is_crouching else STAND_HEIGHT / 2.0
+
+	collision_shape.shape.height = lerpf(collision_shape.shape.height, target_height, delta * LERP_SPEED_CROUCH)
+	collision_shape.position.y = lerpf(collision_shape.position.y, target_shape_y, delta * LERP_SPEED_CROUCH)
+	head.position.y = lerpf(head.position.y, target_head_y, delta * LERP_SPEED_CROUCH)
+
+# -- FOV --
+func _update_fov(delta: float) -> void:
+	var velocity_clamped : float = clamp(velocity.length(), 0.5, SPRINT_SPEED)
+	var target_fov : float = BASE_FOV + FOV_CHANGE * velocity_clamped
+	camera.fov = lerp(camera.fov, target_fov, delta * LERP_SPEED_CAMERA_FOV)
+
+# -- Head Bob --
+func _update_head_bob(delta: float) -> void:
+	var input_dir := Input.get_vector("left", "right", "up", "down")
+	var target_bob := Vector3.ZERO
+
 	if input_dir.length() > 0 and is_on_floor():
 		t_bob += delta * speed
-		target_bob = _headbob(t_bob)
-	camera.transform.origin = camera.transform.origin.lerp(target_bob, delta * 10)
+		target_bob = _calculate_head_bob(t_bob)
 
-	# FOV
-	var velocity_clamped = clamp(velocity.length(), 0.5, SPRINT_SPEED)
-	var target_fov = BASE_FOV + FOV_CHANGE * velocity_clamped
-	camera.fov = lerp(camera.fov, target_fov, delta * 10)
+	camera.transform.origin = camera.transform.origin.lerp(target_bob, delta * LERP_SPEED_CAMERA_FOV)
 
+func _calculate_head_bob(time: float) -> Vector3:
+	return Vector3(
+		sin(time * BOB_FREQ / 2.0) * BOB_AMP,
+		sin(time * BOB_FREQ) * BOB_AMP,
+		0.0)
 
-	move_and_slide()
+# -- Spawn Point --
+func _setup_spawn_point():
+	var spawn_name := GameManager.get_pending_spawn()
 	
-func _headbob(time) -> Vector3:
-	var pos = Vector3.ZERO
-	pos.y = sin(time * BOB_FREQ) * BOB_AMP
-	pos.x = sin(time * BOB_FREQ / 2) * BOB_AMP
-	return pos
+	if spawn_name == "":
+		return
+	# Find the marker in this scene and move there
+	var spawn_point := get_tree().get_root().find_child(spawn_name, true, false)
+	if spawn_point:
+		global_position = spawn_point.global_position
+
+# -- Debug --
+func _update_debug_hud() -> void:
+	var hvel := Vector2(velocity.x, velocity.z).length()
+	debug_label.text = "Speed: %.2f\nVertical: %.2f\nis_crouching: %s" % [hvel, velocity.y, is_crouching]
