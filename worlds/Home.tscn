@@ -73,3 +73,7 @@ use_collision = true
 [node name="CSGBox3D2" type="CSGBox3D" parent="." unique_id=2059883360]
 transform = Transform3D(2.2446587, 0, 0, 0, 2.092741, 0.50410664, 0, 3.6429183, -0.28959322, 2.2926965, 0.16637379, 8.933479)
 use_collision = true
+
+[node name="CSGBox3D3" type="CSGBox3D" parent="." unique_id=965488903]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, -6.072)
+use_collision = true
